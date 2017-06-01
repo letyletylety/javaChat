@@ -51,7 +51,6 @@ public class ChatServerThread extends Thread
 			send("Enter ID, PW");
 			while (server.login(ID, streamIn.readUTF()) != true){
 				send("Enter ID, PW");
-				;
 			}
 		}
 		catch (IOException ioe){
