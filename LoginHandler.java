@@ -17,6 +17,7 @@ public class LoginHandler {
 			System.out.println("Login File Error :" + ioe.getMessage());
 		}
 		fs = new FileHandler(filename);
+		init();
 	}
 	
 	public void init() throws IOException{
@@ -24,6 +25,8 @@ public class LoginHandler {
 		String s[];
 		while ((temp = fs.ReadLine()) != null){
 			s = temp.split(" ");
+			if (s.length < 2)
+				continue;
 			user.put(s[0], s[1]);
 		}
 	}
@@ -43,8 +46,10 @@ public class LoginHandler {
 	public int signIn(String ID, String PW){
 		if (user.containsKey(ID) != true)
 			return 0;
-		if (user.get(ID) != PW)
+		if (user.get(ID).equals(PW) != true){
+			System.out.println(user.get(ID));
 			return 1;
+		}
 		if (logged.containsKey(ID))
 			return 2;
 		
