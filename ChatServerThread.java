@@ -48,8 +48,9 @@ public class ChatServerThread extends Thread
 	{  
 		System.out.println("Server Thread " + ID + " running.");
 		try {
-
+			send("Enter ID, PW");
 			while (server.login(ID, streamIn.readUTF()) != true){
+				send("Enter ID, PW");
 				;
 			}
 		}
