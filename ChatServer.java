@@ -7,6 +7,7 @@ public class ChatServer implements Runnable
 	private ServerSocket server = null;
 	private Thread       thread = null;
 	private int clientCount = 0;
+	private int clientTicket = 0;
 	private LoginHandler sign = null; 
 
 	public ChatServer(int port) throws IOException
@@ -55,73 +56,67 @@ public class ChatServer implements Runnable
 			thread = null;
 		}
 	}
-	private int findClient(int ID)
-	{  
-		for (int i = 0; i < clientCount; i++)
-			if (clients[i].getID() == ID)
-				return i;
-		return -1;
-	}
-	public synchronized void handle(int ID, String input)
+	public synchronized void handle(int clientNum, String input)
 	{  
 		if (input.equals(".bye"))
 		{
-			clients[findClient(ID)].send(".bye");
-			remove(ID); 
+			clients[clientNum].send(".bye");
+			remove(clientNum); 
 		}
 		else
-			for (int i = 0; i < clientCount; i++)
-				clients[i].send(clients[i].getUsername() + ": " + input);   
+			for (int i = 0; i < clients.length; i++){
+				if (clients[i] != null)
+					clients[i].send(clients[clientNum].getUsername() + ": " + input);  
+			}
 	}
 
-	public boolean login(int ID, String input) throws IOException{
+	public synchronized boolean login(int clientNum, String input) throws IOException{
 		String s[] = input.split(" ");
-		int clientID = findClient(ID);
+		if (s.length < 2)
+			return false;
 		if (s[0].compareTo("/create") == 0)
 		{
-			if(sign.create(s[1], s[2]) != true)
+			if(sign.signUp(s[1], s[2]) != true)
 			{
-				clients[clientID].send("The ID already exists.");
+				clients[clientNum].send("The ID already exists.");
 				return false;
 			}
-			clients[clientID].setUsername(s[1]);
-			clients[clientID].send("Login Success!");
+			clients[clientNum].setUsername(s[1]);
+			clients[clientNum].send("Login Success!");
 			return true;
 		}
 		else {
 			int i = sign.signIn(s[0], s[1]);
 			switch (i){
 			case 0:
-				clients[clientID].send("ID does not exist");
+				clients[clientNum].send("ID does not exist");
 				return false;
 			case 1:
-				clients[clientID].send("Incorrect ID/PW");
+				clients[clientNum].send("Incorrect ID/PW");
 				return false;
 			case 2:
-				clients[clientID].send("User already logged in");
+				clients[clientNum].send("User already logged in");
 				return false;
 			}
-			clients[clientID].setUsername(s[0]);
-			clients[clientID].send("Login Success!");
+			clients[clientNum].setUsername(s[0]);
+			clients[clientNum].send("Login Success!");
 			return true;
 		}
 	}
 
-	public void logout(int ID)
+	public void logout(int clientNum)
 	{
-		sign.signOut(clients[findClient(ID)].getUsername());
+		sign.signOut(clients[clientNum].getUsername());
 	}
 
-	public synchronized void remove(int ID)
+	public synchronized void remove(int clientNum)
 	{
-		int pos = findClient(ID);
-		if (pos >= 0)
+		if (clientNum >= 0)
 		{
-			ChatServerThread toTerminate = clients[pos];
-			System.out.println("Removing client thread " + ID + " at " + pos);
-			if (pos < clientCount-1)
-				for (int i = pos+1; i < clientCount; i++)
-					clients[i-1] = clients[i];
+			ChatServerThread toTerminate = clients[clientNum];
+			logout(clientNum);
+			clients[clientNum] = null;
+			System.out.println("Removing client thread " + clientNum );
 			clientCount--;
 			try
 			{ 
@@ -134,16 +129,29 @@ public class ChatServer implements Runnable
 			toTerminate.stop(); 
 		}
 	}
+	
+	private int ticket(){
+		for (int i = 0; i < clients.length; ++i) {
+			if (clients[clientTicket] == null){
+				return clientTicket;
+			}
+			clientTicket = (clientTicket + 1) % clients.length;
+		}
+		return clientTicket;
+	}
+	
+	
 	private void addThread(Socket socket)
 	{  
 		if (clientCount < clients.length)
 		{
+			int clientNum = ticket();
 			System.out.println("Client accepted: " + socket);
-			clients[clientCount] = new ChatServerThread(this, socket);
+			clients[clientNum] = new ChatServerThread(this, socket, clientNum);
 			try
 			{ 
-				clients[clientCount].open(); 
-				clients[clientCount].start();  
+				clients[clientNum].open(); 
+				clients[clientNum].start();  
 				clientCount++;
 			}
 			catch(IOException ioe)
