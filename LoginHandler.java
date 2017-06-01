@@ -31,7 +31,7 @@ public class LoginHandler {
 		}
 	}
 	
-	public boolean create(String ID, String PW) throws IOException{
+	public boolean signUp(String ID, String PW) throws IOException{
 		String temp;
 		if (user.containsKey(ID)){
 			return false;
@@ -46,10 +46,8 @@ public class LoginHandler {
 	public int signIn(String ID, String PW){
 		if (user.containsKey(ID) != true)
 			return 0;
-		if (user.get(ID).equals(PW) != true){
-			System.out.println(user.get(ID));
+		if (user.get(ID).equals(PW) != true)
 			return 1;
-		}
 		if (logged.containsKey(ID))
 			return 2;
 		
