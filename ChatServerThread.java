@@ -5,17 +5,17 @@ public class ChatServerThread extends Thread
 { 
 	private ChatServer       server    = null;
 	private Socket           socket    = null;
-	private int              ID        = -1;
+	private int              clientNum        = -1;
 	private DataInputStream  streamIn  =  null;
 	private DataOutputStream streamOut = null;
 	private String username = null;
 
-	public ChatServerThread(ChatServer _server, Socket _socket)
+	public ChatServerThread(ChatServer _server, Socket _socket, int _clientNum)
 	{
 		super();
 		server = _server;
 		socket = _socket;
-		ID     = socket.getPort();
+		clientNum = _clientNum;
 	}
 	public void send(String msg)
 	{
@@ -26,15 +26,15 @@ public class ChatServerThread extends Thread
 		}
 		catch(IOException ioe)
 		{  
-			System.out.println(ID + " ERROR sending: " + ioe.getMessage());
-			server.remove(ID);
-			server.logout(ID);
+			System.out.println(clientNum + " ERROR sending: " + ioe.getMessage());
+			server.remove(clientNum);
+			server.logout(clientNum);
 			stop();
 		}
 	}
-	public int getID()
+	public int getclientNum()
 	{
-		return ID;
+		return clientNum;
 	}
 
 	public void setUsername(String name){
@@ -46,17 +46,17 @@ public class ChatServerThread extends Thread
 
 	public void run()
 	{  
-		System.out.println("Server Thread " + ID + " running.");
+		System.out.println("Server Thread " + clientNum + " running.");
 		try {
 			send("Enter ID, PW");
-			while (server.login(ID, streamIn.readUTF()) != true){
+			while (server.login(clientNum, streamIn.readUTF()) != true){
 				send("Enter ID, PW");
 			}
 		}
 		catch (IOException ioe){
-			System.out.println(ID + "Login Error: " + ioe.getMessage());
-			server.remove(ID);
-			server.logout(ID);
+			System.out.println(clientNum + "Login Error: " + ioe.getMessage());
+			server.remove(clientNum);
+			server.logout(clientNum);
 			stop();
 		}
 
@@ -64,13 +64,13 @@ public class ChatServerThread extends Thread
 		{
 			try
 			{
-				server.handle(ID, streamIn.readUTF());
+				server.handle(clientNum, streamIn.readUTF());
 			}
 			catch(IOException ioe)
 			{  
-				System.out.println(ID + " ERROR reading: " + ioe.getMessage());
-				server.remove(ID);
-				server.logout(ID);
+				System.out.println(clientNum + " ERROR reading: " + ioe.getMessage());
+				server.remove(clientNum);
+				server.logout(clientNum);
 				stop();
 			}
 		}
