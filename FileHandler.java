@@ -27,7 +27,7 @@ public class FileHandler {
 		fileReader = new FileReader(filename);
 		bufferedReader = new BufferedReader(fileReader);
 		
-		fileWriter = new FileWriter(filename);
+		fileWriter = new FileWriter(filename, true);
 		bufferedWriter = new BufferedWriter(fileWriter);
 	}
 
@@ -41,8 +41,8 @@ public class FileHandler {
 	
 	public void Write(String str) throws IOException
 	{
+		fileWriter.append("\r\n");
 		fileWriter.append(str);
-		fileWriter.append('\n');
-		fileWriter.close();
+		fileWriter.flush();
 	}	
 }
