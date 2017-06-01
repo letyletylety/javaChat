@@ -71,13 +71,13 @@ public class ChatServer implements Runnable
 		}
 		else
 			for (int i = 0; i < clientCount; i++)
-				clients[i].send(ID + ": " + input);   
+				clients[i].send(clients[i].getUsername() + ": " + input);   
 	}
 
 	public boolean login(int ID, String input) throws IOException{
 		String s[] = input.split(" ");
 		int clientID = findClient(ID);
-		if (s[0].equals("/create"))
+		if (s[0].compareTo("/create") == 0)
 		{
 			if(sign.create(s[1], s[2]) != true)
 			{
