@@ -77,7 +77,7 @@ public class ChatServer implements Runnable
 	public boolean login(int ID, String input) throws IOException{
 		String s[] = input.split(" ");
 		int clientID = findClient(ID);
-		if (s[0] == "/create")
+		if (s[0].equals("/create"))
 		{
 			if(sign.create(s[1], s[2]) != true)
 			{
@@ -85,6 +85,7 @@ public class ChatServer implements Runnable
 				return false;
 			}
 			clients[clientID].setUsername(s[1]);
+			clients[clientID].send("Login Success!");
 			return true;
 		}
 		else {
@@ -101,6 +102,7 @@ public class ChatServer implements Runnable
 				return false;
 			}
 			clients[clientID].setUsername(s[0]);
+			clients[clientID].send("Login Success!");
 			return true;
 		}
 	}
