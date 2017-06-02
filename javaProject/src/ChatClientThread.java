@@ -14,6 +14,7 @@ public class ChatClientThread extends Thread
 		open();  
 		start();
 	}
+	
 	public void open()
 	{  
 		try
@@ -26,6 +27,7 @@ public class ChatClientThread extends Thread
 			client.stop();
 		}
 	}
+	
 	public void close()
 	{  
 		try
@@ -37,6 +39,7 @@ public class ChatClientThread extends Thread
 			System.out.println("Error closing input stream: " + ioe);
 		}
 	}
+	
 	public void run()
 	{
 		while (true)

@@ -89,40 +89,6 @@ public class ChatServer implements Runnable
 		}
 	}
 
-	public boolean login(int clientNum, String input) throws IOException{
-		String s[] = input.split(" ");
-		if (s.length < 2)
-			return false;
-		if (s[0].compareTo("/create") == 0)
-		{
-			if(sign.signUp(s[1], s[2]) != true)
-			{
-				clients[clientNum].send("The ID already exists.");
-				return false;
-			}
-			clients[clientNum].setUsername(s[1]);
-			clients[clientNum].send("Login Success!");
-			return true;
-		}
-		else {
-			int i = sign.signIn(s[0], s[1]);
-			switch (i){
-			case 0:
-				clients[clientNum].send("ID does not exist");
-				return false;
-			case 1:
-				clients[clientNum].send("Incorrect ID/PW");
-				return false;
-			case 2:
-				clients[clientNum].send("User already logged in");
-				return false;
-			}
-			clients[clientNum].setUsername(s[0]);
-			clients[clientNum].send("Login Success!");
-			return true;
-		}
-	}
-
 	public void logout(int clientNum)
 	{
 		sign.signOut(clients[clientNum].getUsername());
@@ -161,6 +127,7 @@ public class ChatServer implements Runnable
 		synchronized (roomCount){
 			synchronized(rooms){
 				client.send("-------------- Room List --------------");
+				client.send("Room ID\t\tRoom Name");
 				for (int i = 0; i < roomCount; ++i){
 					client.send("" + rooms[i].getRoomID() + '\t' + rooms[i].getRoomName());
 				}
@@ -186,10 +153,60 @@ public class ChatServer implements Runnable
 		}
 	}
 	
-	public boolean handle_r(ChatServerThread client, String msg){
+	public boolean handle_login(int clientNum, String input) throws IOException{
+		String s[] = input.split(" ");
+		if (s[0].equals("/status")){
+			clients[clientNum].send("Current Location : Login Page");
+			return false;
+		}
+		else if(s[0].equals("/quit")){
+			clients[clientNum].send("/quit");
+			remove(clientNum);
+			return false;
+		}
+		else if (s[0].equals("/register"))
+		{
+			if(s.length < 3)
+				return false;
+			if(sign.signUp(s[1], s[2]) != true)
+			{
+				clients[clientNum].send("The ID already exists.");
+				return false;
+			}
+			clients[clientNum].setUsername(s[1]);
+			clients[clientNum].send("Login Success!");
+			return true;
+		}
+		else {
+			if (s.length < 2)
+				return false;
+			int i = sign.signIn(s[0], s[1]);
+			switch (i){
+			case 0:
+				clients[clientNum].send("ID does not exist");
+				return false;
+			case 1:
+				clients[clientNum].send("Incorrect ID/PW");
+				return false;
+			case 2:
+				clients[clientNum].send("User already logged in");
+				return false;
+			}
+			clients[clientNum].setUsername(s[0]);
+			clients[clientNum].send("Login Success!");
+			return true;
+		}
+	}
+	
+	public boolean handle_main(ChatServerThread client, String msg){
 		String s[] = msg.split(" ");
 		int roomID;
-		if (s[0].compareTo("/join") == 0){
+		if (s[0].equals("/status")){
+			client.send("Current Location : Main Menu");
+			client.send("Your ID : " + client.getUsername());
+			return false;
+		}
+		else if (s[0].equals("/join")){
 			if (s.length < 2){
 				client.send("Type room ID");
 				return false;
@@ -204,7 +221,7 @@ public class ChatServer implements Runnable
 				return true;
 			return false;
 		}
-		else if (s[0].compareTo("/open") == 0){
+		else if (s[0].equals("/open")){
 			if (s.length < 2){
 				client.send("Type room name");
 				return false;
@@ -218,26 +235,39 @@ public class ChatServer implements Runnable
 				return true;
 			return false;
 		}
-		else if (s[0].compareTo("/list") == 0){
+		else if (s[0].equals("/list")){
 			roomList(client);
 			return false;
 		}
 		else if (s[0].equals("/quit")){
-			client.send("Goodbye");
+			client.send("/quit");
 			remove(client.getclientNum());
+			return false;
 		}
 		
 		client.send("Unknown command");
 		return false;
 	}
 	
-	public synchronized boolean handle(ChatRoom room, ChatServerThread client, String input)
+	public synchronized boolean handle_room(ChatRoom room, ChatServerThread client, String input)
 	{  
 		String command = input.split(" ")[0];
-		if (command.equals("/quit"))
+		if (command.equals("/status")){
+			client.send("Current Location : Chat Room");
+			client.send("Your ID : " + client.getUsername());
+			client.send("Current Room : " + client.getRoom().getRoomName());
+		}
+		else if (command.equals("/exit"))
 		{
 			if(room.quit(client))
 				removeRoom(room.getRoomID());
+			return true;
+		}
+		else if (command.equals("/quit")){
+			client.send("/quit");
+			if(room.quit(client))
+				removeRoom(room.getRoomID());
+			remove(client.getclientNum());
 			return true;
 		}
 		else if (command.equals("/list")){

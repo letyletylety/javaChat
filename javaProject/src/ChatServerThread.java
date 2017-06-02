@@ -60,7 +60,7 @@ public class ChatServerThread extends Thread
 		System.out.println("Server Thread " + clientNum + " running.");
 		try {
 			send("Enter ID, PW");
-			while (server.login(clientNum, streamIn.readUTF()) != true){
+			while (server.handle_login(clientNum, streamIn.readUTF()) != true){
 				send("Enter ID, PW");
 			}
 		}
@@ -74,7 +74,7 @@ public class ChatServerThread extends Thread
 		server.roomList(this);
 		while (true){
 			try {
-				while (server.handle_r(this, streamIn.readUTF()) != true){
+				while (server.handle_main(this, streamIn.readUTF()) != true){
 				;
 				}
 			}
@@ -86,7 +86,7 @@ public class ChatServerThread extends Thread
 			}
 		
 			try {
-				while (server.handle(room, this, streamIn.readUTF()) != true){
+				while (server.handle_room(room, this, streamIn.readUTF()) != true){
 					;
 				}
 			}
@@ -95,6 +95,7 @@ public class ChatServerThread extends Thread
 				System.out.println(clientNum + " ERROR reading: " + ioe.getMessage());
 				server.remove(clientNum);
 				server.logout(clientNum);
+				server.handle_room(room, this, "/quit");
 				stop();
 			}
 		}
