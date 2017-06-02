@@ -4,11 +4,40 @@ import java.io.*;
 public class ChatServer implements Runnable
 {
 	private ChatServerThread clients[] = new ChatServerThread[50];
+	private ChatRoom rooms[] = new ChatRoom[10];
 	private ServerSocket server = null;
 	private Thread       thread = null;
 	private int clientCount = 0;
 	private int clientTicket = 0;
+	private Integer roomCount = 0;
+	private int roomTicket = 1;
 	private LoginHandler sign = null; 
+	
+	public static int atoi(String sTmp)
+	{
+		String tTmp = "0", cTmp = "";
+		
+	    sTmp = sTmp.trim();
+	    for(int i=0;i < sTmp.length();i++)
+	    {
+	    	cTmp = sTmp.substring(i,i+1);
+	    	if(cTmp.equals("0") ||
+	    			cTmp.equals("1") ||
+	    			cTmp.equals("2") ||
+	    			cTmp.equals("3") ||
+	    			cTmp.equals("4") ||
+	    			cTmp.equals("5") ||
+	    			cTmp.equals("6") ||
+	    			cTmp.equals("7") ||
+	    			cTmp.equals("8") ||
+	    			cTmp.equals("9")) tTmp += cTmp;
+	    	else if(cTmp.equals("-") && i==0)
+	    		tTmp = "-";
+	    	else
+	    		break;
+	    }	 
+	    return(Integer.parseInt(tTmp));
+	}
 
 	public ChatServer(int port) throws IOException
 	{
@@ -25,6 +54,7 @@ public class ChatServer implements Runnable
 			System.out.println("Can not bind to port " + port + ": " + ioe.getMessage());
 		}
 	}
+	
 	public void run()
 	{  
 		while (thread != null)
@@ -40,6 +70,7 @@ public class ChatServer implements Runnable
 			}
 		}
 	}
+	
 	public void start()
 	{ 
 		if (thread == null)
@@ -48,6 +79,7 @@ public class ChatServer implements Runnable
 			thread.start();
 		}
 	}
+	
 	public void stop()
 	{  
 		if (thread != null)
@@ -56,21 +88,8 @@ public class ChatServer implements Runnable
 			thread = null;
 		}
 	}
-	public synchronized void handle(int clientNum, String input)
-	{  
-		if (input.equals(".bye"))
-		{
-			clients[clientNum].send(".bye");
-			remove(clientNum); 
-		}
-		else
-			for (int i = 0; i < clients.length; i++){
-				if (clients[i] != null)
-					clients[i].send(clients[clientNum].getUsername() + ": " + input);  
-			}
-	}
 
-	public synchronized boolean login(int clientNum, String input) throws IOException{
+	public boolean login(int clientNum, String input) throws IOException{
 		String s[] = input.split(" ");
 		if (s.length < 2)
 			return false;
@@ -108,6 +127,136 @@ public class ChatServer implements Runnable
 	{
 		sign.signOut(clients[clientNum].getUsername());
 	}
+	
+	public int createRoom(String name){
+		synchronized (roomCount){
+			synchronized(rooms){
+				if (roomCount < rooms.length){
+					int roomID = ticket_r();
+					rooms[roomCount] = new ChatRoom(name, roomID);
+					roomCount++;
+					return roomID;
+				}
+				return -1;
+			}
+		}
+	}
+	
+	public void removeRoom(int roomID){
+		synchronized (roomCount){
+			synchronized(rooms){
+				for (int i = 0; i < roomCount; ++i){
+					if (rooms[i].getRoomID() == roomID){
+						rooms[i] = null;
+						for (int j = i; j < roomCount - 1; ++j)
+							rooms[j] = rooms[j + 1];
+						roomCount--;
+					}
+				}
+			}
+		}
+	}
+	
+	public void roomList(ChatServerThread client){
+		synchronized (roomCount){
+			synchronized(rooms){
+				client.send("-------------- Room List --------------");
+				for (int i = 0; i < roomCount; ++i){
+					client.send("" + rooms[i].getRoomID() + '\t' + rooms[i].getRoomName());
+				}
+				client.send("---------------------------------------");
+			}
+		}
+	}
+	
+	public boolean join(int roomID, ChatServerThread client) {
+		synchronized (roomCount){
+			synchronized(rooms){
+				for (int i = 0; i < roomCount; ++i){
+					if (rooms[i].getRoomID() == roomID){
+						if (rooms[i].join(client))
+							return true;
+						else 
+							return false;
+					}
+				}
+				client.send("Room " + roomID + " doesn't exist");
+				return false;
+			}
+		}
+	}
+	
+	public boolean handle_r(ChatServerThread client, String msg){
+		String s[] = msg.split(" ");
+		int roomID;
+		if (s[0].compareTo("/join") == 0){
+			if (s.length < 2){
+				client.send("Type room ID");
+				return false;
+			}
+
+			roomID = atoi(s[1]);
+			if (roomID >= 10000 || roomID == 0){
+				client.send("Invalid room ID");
+				return false;
+			}
+			if (join(roomID,client))
+				return true;
+			return false;
+		}
+		else if (s[0].compareTo("/open") == 0){
+			if (s.length < 2){
+				client.send("Type room name");
+				return false;
+			}
+			roomID = createRoom(msg.substring(5));
+			if (roomID == -1){
+				client.send("Max Room Reached: " + rooms.length);
+				return false;
+			}
+			if (join(roomID, client))
+				return true;
+			return false;
+		}
+		else if (s[0].compareTo("/list") == 0){
+			roomList(client);
+			return false;
+		}
+		else if (s[0].equals("/quit")){
+			client.send("Goodbye");
+			remove(client.getclientNum());
+		}
+		
+		client.send("Unknown command");
+		return false;
+	}
+	
+	public synchronized boolean handle(ChatRoom room, ChatServerThread client, String input)
+	{  
+		String command = input.split(" ")[0];
+		if (command.equals("/quit"))
+		{
+			if(room.quit(client))
+				removeRoom(room.getRoomID());
+			return true;
+		}
+		else if (command.equals("/list")){
+			room.list(client);
+		}
+		else
+			room.chat(client.getUsername(), input);
+		return false;
+	}
+	
+	private int ticket_r(){
+		for (int i = 0; i < roomCount; ++i) {
+			if (rooms[i].getRoomID() != roomTicket){
+				return roomTicket;
+			}
+			roomTicket = (roomTicket + 1) % 9999 + 1;
+		}
+		return roomTicket;
+	}
 
 	public synchronized void remove(int clientNum)
 	{
@@ -140,7 +289,6 @@ public class ChatServer implements Runnable
 		return clientTicket;
 	}
 	
-	
 	private void addThread(Socket socket)
 	{  
 		if (clientCount < clients.length)
@@ -162,6 +310,7 @@ public class ChatServer implements Runnable
 		else
 			System.out.println("Client refused: maximum " + clients.length + " reached.");
 	}
+	
 	public static void main(String args[]) throws IOException
 	{  
 		ChatServer server = null;

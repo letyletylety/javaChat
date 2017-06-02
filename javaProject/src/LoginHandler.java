@@ -57,7 +57,7 @@ public class LoginHandler {
 	
 	public void signOut(String ID){
 		if (logged.containsKey(ID) != true){
-			System.out.println("Error : User is not signed in");
+			System.out.println("System : User is not signed in");
 			return;
 		}
 		logged.remove(ID);

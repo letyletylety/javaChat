@@ -9,6 +9,7 @@ public class ChatServerThread extends Thread
 	private DataInputStream  streamIn  =  null;
 	private DataOutputStream streamOut = null;
 	private String username = null;
+	private ChatRoom room = null;
 
 	public ChatServerThread(ChatServer _server, Socket _socket, int _clientNum)
 	{
@@ -40,12 +41,22 @@ public class ChatServerThread extends Thread
 	public void setUsername(String name){
 		username = name;
 	}
+	
 	public String getUsername(){
 		return username;
+	}
+	
+	public void setRoom(ChatRoom _room){
+		room = _room;
+	}
+	
+	public ChatRoom getRoom(){
+		return room;
 	}
 
 	public void run()
 	{  
+		// ·Î±×ÀÎ
 		System.out.println("Server Thread " + clientNum + " running.");
 		try {
 			send("Enter ID, PW");
@@ -54,17 +65,30 @@ public class ChatServerThread extends Thread
 			}
 		}
 		catch (IOException ioe){
-			System.out.println(clientNum + "Login Error: " + ioe.getMessage());
+			System.out.println(clientNum + " Login Error: " + ioe.getMessage());
 			server.remove(clientNum);
 			server.logout(clientNum);
 			stop();
 		}
-
-		while (true)
-		{
-			try
-			{
-				server.handle(clientNum, streamIn.readUTF());
+		
+		server.roomList(this);
+		while (true){
+			try {
+				while (server.handle_r(this, streamIn.readUTF()) != true){
+				;
+				}
+			}
+			catch(IOException ioe){
+				System.out.println(clientNum + " Chat Room Error: " + ioe.getMessage());
+				server.remove(clientNum);
+				server.logout(clientNum);
+				stop();
+			}
+		
+			try {
+				while (server.handle(room, this, streamIn.readUTF()) != true){
+					;
+				}
 			}
 			catch(IOException ioe)
 			{  

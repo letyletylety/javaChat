@@ -2,11 +2,13 @@ import java.io.*;
 
 public class ChatRoom {
 	private ChatServerThread clients[]= new ChatServerThread[10];
+	private int roomID = -1;
 	private int clientCount = 0;
 	private String roomName = null;
 	
-	public ChatRoom(String name){
+	public ChatRoom(String name, int _roomID){
 		roomName = name;
+		roomID = _roomID;
 	}
 	
 	public void setRoomName(String name){
@@ -17,19 +19,24 @@ public class ChatRoom {
 		return roomName;
 	}
 	
-	public boolean join(ChatServerThread client){
+	public int getRoomID(){
+		return roomID;
+	}
+	
+	public synchronized boolean join(ChatServerThread client){
 		if (clientCount < clients.length){
 			clients[clientCount] = client;
 			clientCount++;
 			for (int i = 0; i < clientCount; ++i)
 				clients[i].send(client.getUsername() + " joined");
+			client.setRoom(this);
 			return true;
 		}
-		client.send("Room is full");
+		client.send("Room number " + roomID + " is full");
 		return false;
 	}
 	
-	public boolean quit(ChatServerThread client){
+	public synchronized boolean quit(ChatServerThread client){
 		if (clientCount > 0){
 			for (int i = 0; i < clientCount; ++i){
 				if (clients[i].getclientNum() == client.getclientNum()){
@@ -37,6 +44,7 @@ public class ChatRoom {
 						clients[j].send(client.getUsername() + " left");
 					clients[i] = null;
 					clientCount--;
+					client.setRoom(null);
 					if (clientCount == 0)
 						return true;
 					if (clients[clientCount] != null)
@@ -49,16 +57,16 @@ public class ChatRoom {
 		return false;
 	}
 	
-	public void chat(String msg){
+	public synchronized void chat(String name, String msg){
 		for (int i = 0; i < clientCount; ++i)
-			clients[i].send(clients[i].getUsername() + ": " + msg);
+			clients[i].send(name + ": " + msg);
 	}
 	
 	public void list(ChatServerThread client){
 		String userlist = "-------------- User List --------------\r\n";
 		for (int i = 0; i < clientCount; ++i)
 			userlist = userlist.concat(clients[i].getUsername() + "\r\n");
-		userlist.concat("---------------------------------------");
+		userlist = userlist.concat("---------------------------------------");
 		client.send(userlist);
 	}
 	
