@@ -29,7 +29,6 @@ public class FileHandler {
 			bufferedWriter = new BufferedWriter(fileWriter);
 		}
 		catch (IOException ioe){
-			System.out.println("File Open Error: " + ioe.getMessage());
 		}
 	}
 

@@ -244,26 +244,28 @@ public class ChatServer implements Runnable
 			String logList[] = log.file.list();
 			if (s.length < 2) {
 				client.send("-------------- Log List --------------");
+				client.send("Log ID\tLog Name");
 				for (int i = 0; i < logList.length; ++i){
-					client.send(logList[i]);
+					client.send("" + (i + 1) + '\t' + logList[i]);
 				}
 				client.send("--------------------------------------");
 				return false;
 			}
 			else {
-				for (int i = 0; i < logList.length; ++i){
-					if (msg.substring(5).equals(logList[i])){
-						FileHandler log_read = new FileHandler("log\\" + client.getUsername() + "\\" + logList[i]);
-						client.send("---------------- Log ----------------");
-						String line;
-						while ((line = log_read.ReadLine()) != null){
-							client.send(line);
-						}
-						client.send("-------------------------------------");
-					}
+				int i = atoi(msg.substring(5));
+				if (i == 0 || i > logList.length){
+					client.send("Invalid Log");
 					return false;
 				}
-				client.send("Log does not exist");
+				else {
+					FileHandler log_read = new FileHandler("log\\" + client.getUsername() + "\\" + logList[i - 1]);
+					client.send("---------------- Log ----------------");
+					String line;
+					while ((line = log_read.ReadLine()) != null){
+						client.send(line);
+					}
+					client.send("-------------------------------------");
+				}
 				return false;
 			}
 		}
