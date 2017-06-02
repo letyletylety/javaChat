@@ -13,32 +13,6 @@ public class ChatServer implements Runnable
 	private int roomTicket = 1;
 	private LoginHandler sign = null; 
 	
-	public static int atoi(String sTmp)
-	{
-		String tTmp = "0", cTmp = "";
-		
-	    sTmp = sTmp.trim();
-	    for(int i=0;i < sTmp.length();i++)
-	    {
-	    	cTmp = sTmp.substring(i,i+1);
-	    	if(cTmp.equals("0") ||
-	    			cTmp.equals("1") ||
-	    			cTmp.equals("2") ||
-	    			cTmp.equals("3") ||
-	    			cTmp.equals("4") ||
-	    			cTmp.equals("5") ||
-	    			cTmp.equals("6") ||
-	    			cTmp.equals("7") ||
-	    			cTmp.equals("8") ||
-	    			cTmp.equals("9")) tTmp += cTmp;
-	    	else if(cTmp.equals("-") && i==0)
-	    		tTmp = "-";
-	    	else
-	    		break;
-	    }	 
-	    return(Integer.parseInt(tTmp));
-	}
-
 	public ChatServer(int port) throws IOException
 	{
 		try
@@ -87,6 +61,32 @@ public class ChatServer implements Runnable
 			thread.stop(); 
 			thread = null;
 		}
+	}
+	
+	public static int atoi(String sTmp)
+	{
+		String tTmp = "0", cTmp = "";
+		
+	    sTmp = sTmp.trim();
+	    for(int i=0;i < sTmp.length();i++)
+	    {
+	    	cTmp = sTmp.substring(i,i+1);
+	    	if(cTmp.equals("0") ||
+	    			cTmp.equals("1") ||
+	    			cTmp.equals("2") ||
+	    			cTmp.equals("3") ||
+	    			cTmp.equals("4") ||
+	    			cTmp.equals("5") ||
+	    			cTmp.equals("6") ||
+	    			cTmp.equals("7") ||
+	    			cTmp.equals("8") ||
+	    			cTmp.equals("9")) tTmp += cTmp;
+	    	else if(cTmp.equals("-") && i==0)
+	    		tTmp = "-";
+	    	else
+	    		break;
+	    }	 
+	    return(Integer.parseInt(tTmp));
 	}
 
 	public void logout(int clientNum)
@@ -153,7 +153,7 @@ public class ChatServer implements Runnable
 		}
 	}
 	
-	public boolean handle_login(int clientNum, String input) throws IOException{
+	public boolean handle_login(int clientNum, String input) {
 		String s[] = input.split(" ");
 		if (s[0].equals("/status")){
 			clients[clientNum].send("Current Location : Login Page");
@@ -226,7 +226,7 @@ public class ChatServer implements Runnable
 				client.send("Type room name");
 				return false;
 			}
-			roomID = createRoom(msg.substring(5));
+			roomID = createRoom(msg.substring(6));
 			if (roomID == -1){
 				client.send("Max Room Reached: " + rooms.length);
 				return false;
@@ -238,6 +238,34 @@ public class ChatServer implements Runnable
 		else if (s[0].equals("/list")){
 			roomList(client);
 			return false;
+		}
+		else if (s[0].equals("/log")){
+			FileHandler log = new FileHandler("log\\" + client.getUsername());
+			String logList[] = log.file.list();
+			if (s.length < 2) {
+				client.send("-------------- Log List --------------");
+				for (int i = 0; i < logList.length; ++i){
+					client.send(logList[i]);
+				}
+				client.send("--------------------------------------");
+				return false;
+			}
+			else {
+				for (int i = 0; i < logList.length; ++i){
+					if (msg.substring(5).equals(logList[i])){
+						FileHandler log_read = new FileHandler("log\\" + client.getUsername() + "\\" + logList[i]);
+						client.send("---------------- Log ----------------");
+						String line;
+						while ((line = log_read.ReadLine()) != null){
+							client.send(line);
+						}
+						client.send("-------------------------------------");
+					}
+					return false;
+				}
+				client.send("Log does not exist");
+				return false;
+			}
 		}
 		else if (s[0].equals("/quit")){
 			client.send("/quit");

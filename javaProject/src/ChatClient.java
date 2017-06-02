@@ -44,8 +44,10 @@ public class ChatClient implements Runnable
 					System.out.println("<ID> <PW> : Sign in\r\n");
 					System.out.println("In Main Menu");
 					System.out.println("/list : Show the list of opened chat rooms");
-					System.out.println("/join <ROOM_ID> : Join the room");
-					System.out.println("/open <ROOM_NAME> : Open a new room\r\n");
+					System.out.println("/join <Room_ID> : Join the room");
+					System.out.println("/open <Room_name> : Open a new room");
+					System.out.println("/log : Show the list of log");
+					System.out.println("/log <Log_name> : Show the log\r\n");
 					System.out.println("In Chat Room");
 					System.out.println("/list : Show the list of users in the room");
 					System.out.println("/exit : Leave the room");

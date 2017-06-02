@@ -27,8 +27,11 @@ public class ChatRoom {
 		if (clientCount < clients.length){
 			clients[clientCount] = client;
 			clientCount++;
-			for (int i = 0; i < clientCount; ++i)
+			for (int i = 0; i < clientCount; ++i){
 				clients[i].send(client.getUsername() + " joined");
+				FileHandler log = new FileHandler("log\\" + clients[i].getUsername() + "\\" + roomName);
+				log.Write(client.getUsername() + " joined");
+			}
 			client.setRoom(this);
 			return true;
 		}
@@ -40,8 +43,11 @@ public class ChatRoom {
 		if (clientCount > 0){
 			for (int i = 0; i < clientCount; ++i){
 				if (clients[i].getclientNum() == client.getclientNum()){
-					for (int j = 0; j < clientCount; ++j) 
+					for (int j = 0; j < clientCount; ++j) {
 						clients[j].send(client.getUsername() + " left");
+						FileHandler log = new FileHandler("log\\" + clients[j].getUsername() + "\\" + roomName);
+						log.Write(client.getUsername() + " left");
+					}
 					clients[i] = null;
 					clientCount--;
 					client.setRoom(null);
@@ -58,8 +64,11 @@ public class ChatRoom {
 	}
 	
 	public synchronized void chat(String name, String msg){
-		for (int i = 0; i < clientCount; ++i)
+		for (int i = 0; i < clientCount; ++i){
+			FileHandler log = new FileHandler("log\\" + clients[i].getUsername() + "\\" + roomName);
+			log.Write(name + ": " + msg);
 			clients[i].send(name + ": " + msg);
+		}
 	}
 	
 	public void list(ChatServerThread client){

@@ -6,21 +6,12 @@ public class LoginHandler {
 	private HashMap<String, String> user = new HashMap<String, String>();
 	private HashMap<String, Integer> logged = new HashMap<String, Integer>(); 
 	
-	public LoginHandler (String filename) throws IOException {
-		File login_file = new File(filename);
-		try {
-			if (login_file.exists() != true){
-       	 		login_file.createNewFile();
-        	}
-		}
-		catch (IOException ioe){
-			System.out.println("Login File Error :" + ioe.getMessage());
-		}
+	public LoginHandler (String filename) {
 		fs = new FileHandler(filename);
 		init();
 	}
 	
-	public void init() throws IOException{
+	public void init() {
 		String temp;
 		String s[];
 		while ((temp = fs.ReadLine()) != null){
@@ -28,16 +19,20 @@ public class LoginHandler {
 			if (s.length < 2)
 				continue;
 			user.put(s[0], s[1]);
+			File log = new File("log\\" + s[0]);
+			log.mkdirs();
 		}
 	}
 	
-	public boolean signUp(String ID, String PW) throws IOException{
+	public boolean signUp(String ID, String PW) {
 		String temp;
 		if (user.containsKey(ID)){
 			return false;
 		}
 		user.put(ID, PW);
 		logged.put(ID, 1);
+		File log = new File("log\\" + ID);
+		log.mkdirs();
 		temp = ID + " " + PW;
 		fs.Write(temp);
 		return true;

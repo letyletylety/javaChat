@@ -17,32 +17,45 @@ public class FileHandler {
 	
 	String string = new String();
 	
-	public FileHandler(String filename) throws IOException
+	public FileHandler(String filename)
 	{	
-		file = new File(filename);
-
-		if(!file.exists())
-			file.createNewFile();
+		try {
+			file = new File(filename);
 		
-		fileReader = new FileReader(filename);
-		bufferedReader = new BufferedReader(fileReader);
+			fileReader = new FileReader(filename);
+			bufferedReader = new BufferedReader(fileReader);
 		
-		fileWriter = new FileWriter(filename, true);
-		bufferedWriter = new BufferedWriter(fileWriter);
+			fileWriter = new FileWriter(filename, true);
+			bufferedWriter = new BufferedWriter(fileWriter);
+		}
+		catch (IOException ioe){
+			System.out.println("File Open Error: " + ioe.getMessage());
+		}
 	}
 
 	// 파일에서 한 줄을 읽어옴 
 	// 파일의 끝에서는 null을 반환
-	public String ReadLine() throws IOException
+	public String ReadLine()
 	{
-		string = bufferedReader.readLine();	
+		try {
+			string = bufferedReader.readLine();	
+			return string;
+		}
+		catch (IOException ioe){
+			System.out.println("File Read Error: " + ioe.getMessage());
+		}
 		return string;
 	}	
 	
-	public void Write(String str) throws IOException
+	public void Write(String str)
 	{
-		fileWriter.append(str);
-		fileWriter.append("\r\n");
-		fileWriter.flush();
+		try {
+			fileWriter.append(str);
+			fileWriter.append("\r\n");
+			fileWriter.flush();
+		}
+		catch (IOException ioe){
+			System.out.println("File Write Error: " + ioe.getMessage());
+		}
 	}	
 }
