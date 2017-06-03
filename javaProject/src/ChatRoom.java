@@ -5,10 +5,17 @@ public class ChatRoom {
 	private int roomID = -1;
 	private int clientCount = 0;
 	private String roomName = null;
+	private File repository = null;
+	private Integer fileTicket = 0;
+	private Integer fileCount = 1;
+	private String[] fileName = new String[500];
 	
 	public ChatRoom(String name, int _roomID){
 		roomName = name;
 		roomID = _roomID;
+		repository = new File("repository\\" + _roomID);
+		if (!repository.exists())
+			repository.mkdirs();
 	}
 	
 	public void setRoomName(String name){
@@ -19,8 +26,45 @@ public class ChatRoom {
 		return roomName;
 	}
 	
+	public boolean setFileName(int fileID, String _fileName) {
+		synchronized (fileCount) {
+			if (fileID < fileName.length) {
+				fileName[fileID] = _fileName;
+				if (fileCount < fileID + 1){
+					fileCount = fileID + 1;
+				}
+				return true;
+			}
+			return false;
+		}
+	}
+	
+	public int getFileNumber(){
+		return fileName.length;
+	}
+	
+	public File getFile(int fileID) {
+		File file = new File("repository\\" + roomID + "\\" + fileID);
+		if (!file.exists())
+			return null;
+		return file;
+	}
+	
+	public String getFileName(int fileID) {
+		if (fileID > fileName.length)
+			return null;
+		return fileName[fileID];
+	}
+	
 	public int getRoomID(){
 		return roomID;
+	}
+	
+	public int f_ticket() {
+		synchronized (fileTicket){
+			fileTicket++;
+			return fileTicket;
+		}
 	}
 	
 	public synchronized boolean join(ChatServerThread client){
@@ -51,8 +95,14 @@ public class ChatRoom {
 					clients[i] = null;
 					clientCount--;
 					client.setRoom(null);
-					if (clientCount == 0)
+					if (clientCount == 0){
+						File userfiles[] = repository.listFiles();
+						for (int j = 0; j < userfiles.length; ++j){
+							userfiles[j].delete();
+						}
+						repository.delete();
 						return true;
+					}
 					if (clients[clientCount] != null)
 						clients[i] = clients[clientCount];
 					return false;
@@ -72,11 +122,20 @@ public class ChatRoom {
 	}
 	
 	public void list(ChatServerThread client){
-		String userlist = "-------------- User List --------------\r\n";
+		String msg = "-------------- User List --------------\r\n";
 		for (int i = 0; i < clientCount; ++i)
-			userlist = userlist.concat(clients[i].getUsername() + "\r\n");
-		userlist = userlist.concat("---------------------------------------");
-		client.send(userlist);
+			msg = msg.concat(clients[i].getUsername() + "\r\n");
+		msg = msg.concat("---------------------------------------");
+		client.send(msg);
+	}
+	
+	public void fileList(ChatServerThread client) {
+		String msg = "-------------- File List --------------\r\n";
+		for (int i = 1; i < fileCount; ++i){
+			msg = msg.concat("" + i + "\t" + fileName[i] + "\r\n");
+		}
+		msg = msg.concat("---------------------------------------");
+		client.send(msg);
 	}
 	
 }

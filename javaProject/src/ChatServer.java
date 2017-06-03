@@ -98,12 +98,16 @@ public class ChatServer implements Runnable
 		synchronized (roomCount){
 			synchronized(rooms){
 				if (roomCount < rooms.length){
+					for (int i = 0; i < roomCount; ++i){
+						if (rooms[i].getRoomName().equals(name))
+							return -1;
+					}
 					int roomID = ticket_r();
 					rooms[roomCount] = new ChatRoom(name, roomID);
 					roomCount++;
 					return roomID;
 				}
-				return -1;
+				return -2;
 			}
 		}
 	}
@@ -126,12 +130,12 @@ public class ChatServer implements Runnable
 	public void roomList(ChatServerThread client){
 		synchronized (roomCount){
 			synchronized(rooms){
-				client.send("-------------- Room List --------------");
+				client.send("----------------- Room List -----------------");
 				client.send("Room ID\t\tRoom Name");
 				for (int i = 0; i < roomCount; ++i){
 					client.send("" + rooms[i].getRoomID() + '\t' + rooms[i].getRoomName());
 				}
-				client.send("---------------------------------------");
+				client.send("---------------------------------------------");
 			}
 		}
 	}
@@ -228,6 +232,10 @@ public class ChatServer implements Runnable
 			}
 			roomID = createRoom(msg.substring(6));
 			if (roomID == -1){
+				client.send("Room Name Already exists");
+				return false;
+			}
+			else if (roomID == -2){
 				client.send("Max Room Reached: " + rooms.length);
 				return false;
 			}
@@ -243,12 +251,12 @@ public class ChatServer implements Runnable
 			FileHandler log = new FileHandler("log\\" + client.getUsername());
 			String logList[] = log.file.list();
 			if (s.length < 2) {
-				client.send("-------------- Log List --------------");
+				client.send("------------------ Log List ------------------");
 				client.send("Log ID\tLog Name");
 				for (int i = 0; i < logList.length; ++i){
 					client.send("" + (i + 1) + '\t' + logList[i]);
 				}
-				client.send("--------------------------------------");
+				client.send("----------------------------------------------");
 				return false;
 			}
 			else {
@@ -259,12 +267,12 @@ public class ChatServer implements Runnable
 				}
 				else {
 					FileHandler log_read = new FileHandler("log\\" + client.getUsername() + "\\" + logList[i - 1]);
-					client.send("---------------- Log ----------------");
+					client.send("-------------------- Log --------------------");
 					String line;
 					while ((line = log_read.ReadLine()) != null){
 						client.send(line);
 					}
-					client.send("-------------------------------------");
+					client.send("---------------------------------------------");
 				}
 				return false;
 			}
@@ -281,7 +289,8 @@ public class ChatServer implements Runnable
 	
 	public synchronized boolean handle_room(ChatRoom room, ChatServerThread client, String input)
 	{  
-		String command = input.split(" ")[0];
+		String s[] = input.split(" ");
+		String command = s[0];
 		if (command.equals("/status")){
 			client.send("Current Location : Chat Room");
 			client.send("Your ID : " + client.getUsername());
@@ -291,21 +300,43 @@ public class ChatServer implements Runnable
 		{
 			if(room.quit(client))
 				removeRoom(room.getRoomID());
-			return true;
+			return false;
 		}
 		else if (command.equals("/quit")){
 			client.send("/quit");
 			if(room.quit(client))
 				removeRoom(room.getRoomID());
 			remove(client.getclientNum());
-			return true;
+			return false;
 		}
 		else if (command.equals("/list")){
 			room.list(client);
 		}
+		else if (command.equals("/file")){
+			room.fileList(client);
+		}
+		else if (command.equals("/upload")){
+			if (s.length < 2){
+				client.send("Error: Invalid file name");
+				return true;
+			}
+			client.upload(s[1]);
+		}
+		else if (command.equals("/download")){
+			if (s.length < 2) {
+				client.send("Type file ID");
+				return true;
+			}
+			int fileID = atoi(s[1]);
+			if (fileID == 0 || fileID > room.getFileNumber()) {
+				client.send("Invalid fileID");
+				return true;
+			}
+			client.sendFile(room.getFile(fileID), room.getFileName(fileID));
+		}
 		else
 			room.chat(client.getUsername(), input);
-		return false;
+		return true;
 	}
 	
 	private int ticket_r(){

@@ -3,11 +3,16 @@ import java.io.*;
 
 public class ChatClient implements Runnable
 { 
+	private static final int BUFFER_SIZE = 1024;
 	private Socket socket              = null;
 	private Thread thread              = null;
 	private BufferedReader  console   = null;
 	private DataOutputStream streamOut = null;
 	private ChatClientThread client    = null;
+	private FileInputStream fstreamIn = null;
+	private FileOutputStream fstreamOut = null;
+	private enum Status { LOGIN, MAIN, ROOM }
+	private Status status;
 
 	public ChatClient(String serverName, int serverPort)
 	{  
@@ -29,6 +34,7 @@ public class ChatClient implements Runnable
 	public void run()
 	{  
 		System.out.println("Type \"/help\" to check list of commands");
+		status = Status.LOGIN;
 		while (thread != null)
 		{  
 			try
@@ -43,17 +49,51 @@ public class ChatClient implements Runnable
 					System.out.println("/register <ID> <PW> : Sign up");
 					System.out.println("<ID> <PW> : Sign in\r\n");
 					System.out.println("In Main Menu");
-					System.out.println("/list : Show the list of opened chat rooms");
+					System.out.println("/list : Show room list");
 					System.out.println("/join <Room_ID> : Join the room");
 					System.out.println("/open <Room_name> : Open a new room");
 					System.out.println("/log : Show the list of log");
-					System.out.println("/log <Log_name> : Show the log\r\n");
+					System.out.println("/log <Log_ID> : Show the log\r\n");
 					System.out.println("In Chat Room");
-					System.out.println("/list : Show the list of users in the room");
+					System.out.println("/list : Show user list");
+					System.out.println("/file : Show file list");
+					System.out.println("/upload <File_name> : Upload a file");
+					System.out.println("/download <File_ID> : Download a file");
 					System.out.println("/exit : Leave the room");
 					System.out.println("----------------------------------------------");
 					continue;
 				}
+				else if(status == Status.ROOM && command.equals("/upload")){
+					if (msg.length() < 9){
+						System.out.println("Type File name.");
+						continue;
+					}
+					File file = new File(msg.substring(8));
+					if (!file.exists()) {
+						System.out.println("File does not exists.");
+						continue;
+					}
+					else if(!file.isFile()){
+						System.out.println("Not a file.");
+						continue;
+					}
+					System.out.println("File transfer started. Please wait...");
+					streamOut.writeUTF("/upload " + file.getName());
+					streamOut.flush();
+					
+					fstreamIn = new FileInputStream(file);
+					byte[] buffer = new byte[BUFFER_SIZE];
+					long filesize = file.length();
+					int readBytes;
+					streamOut.writeLong(filesize);
+					while((readBytes = fstreamIn.read(buffer)) != -1){
+						streamOut.write(buffer, 0, readBytes);
+					}
+					streamOut.flush();
+					fstreamIn.close();
+					System.out.println("File transfer Completed.");
+					continue;
+				}			
 				streamOut.writeUTF(msg);
 				streamOut.flush();
 			}
@@ -67,10 +107,28 @@ public class ChatClient implements Runnable
 	
 	public void handle(String msg)
 	{  
-		if (msg.equals("/quit"))
+		String s[] = msg.split(" ");
+		String command = s[0];
+		if (command.equals("/quit"))
 		{  
 			System.out.println("Good bye. Press RETURN to exit ...");
 			stop();
+		}
+		else if (command.equals("/login")) {
+			status = Status.MAIN;
+		}
+		else if (command.equals("/join")) {
+			status = Status.ROOM;
+		}
+		else if (command.equals("/exit")) {
+			status = Status.MAIN;
+		}
+		else if (command.equals("/download")){
+			if (s.length < 2){
+				System.out.println("Error: File name isn't received");
+				return;
+			}
+			client.download(s[1]);
 		}
 		else
 			System.out.println(msg);

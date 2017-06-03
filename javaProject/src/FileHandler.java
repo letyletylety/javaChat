@@ -21,6 +21,8 @@ public class FileHandler {
 	{	
 		try {
 			file = new File(filename);
+			if (!file.exists())
+				file.createNewFile();
 		
 			fileReader = new FileReader(filename);
 			bufferedReader = new BufferedReader(fileReader);
