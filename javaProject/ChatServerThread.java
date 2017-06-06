@@ -13,6 +13,7 @@ public class ChatServerThread extends Thread
 	private FileOutputStream fstreamOut = null;
 	private String username = null;
 	private ChatRoom room = null;
+	public int error = 0;
 
 	public ChatServerThread(ChatServer _server, Socket _socket, int _clientNum)
 	{
@@ -32,11 +33,12 @@ public class ChatServerThread extends Thread
 		catch(IOException ioe)
 		{  
 			System.out.println(clientNum + " ERROR sending: " + ioe.getMessage());
+			error = 1;
 			server.remove(clientNum);
-			server.logout(clientNum);
 			if (room != null){
-				if(room.quit(this))
-					server.removeRoom(room.getRoomID());
+				int flag = room.quit(this);
+				if (flag != -1)
+					server.removeRoom(flag);
 			}
 			stop();
 		}
@@ -49,7 +51,7 @@ public class ChatServerThread extends Thread
 		}
 		
 		try {
-			streamOut.writeUTF("/download " + fileName);
+			streamOut.writeUTF("/down " + fileName);
 			streamOut.flush();
 			
 			fstreamIn = new FileInputStream(file);
@@ -66,11 +68,12 @@ public class ChatServerThread extends Thread
 		}
 		catch (IOException ioe) {
 			System.out.println(clientNum + " ERROR file sending: " + ioe.getMessage());
+			error = 1;
 			server.remove(clientNum);
-			server.logout(clientNum);
 			if (room != null){
-				if(room.quit(this))
-					server.removeRoom(room.getRoomID());
+				int flag = room.quit(this);
+				if (flag != -1)
+					server.removeRoom(flag);
 			}
 		}
 	}
@@ -120,18 +123,19 @@ public class ChatServerThread extends Thread
 		}
 		catch (IOException ioe) {
 			System.out.println(clientNum + " ERROR reading: " + ioe.getMessage());
-			server.remove(clientNum);
-			server.logout(clientNum);
+			error = 1;
 			if (room != null){
-				if(room.quit(this))
-					server.removeRoom(room.getRoomID());
+				int flag = room.quit(this);
+				if (flag != -1)
+					server.removeRoom(flag);
 			}
+			server.remove(clientNum);
 		}
 	}
 
 	public void run()
 	{  
-		// ∑Œ±◊¿Œ
+		// Î°úÍ∑∏Ïù∏
 		System.out.println("Thread Number " + clientNum + " running.");
 		try {
 			send("Enter ID, PW");
@@ -141,8 +145,8 @@ public class ChatServerThread extends Thread
 		}
 		catch (IOException ioe){
 			System.out.println(clientNum + " Login Error: " + ioe.getMessage());
+			error = 1;
 			server.remove(clientNum);
-			server.logout(clientNum);
 			stop();
 		}
 		send("/login");
@@ -156,8 +160,8 @@ public class ChatServerThread extends Thread
 			}
 			catch(IOException ioe){
 				System.out.println(clientNum + " Chat Room Error: " + ioe.getMessage());
+				error = 1;
 				server.remove(clientNum);
-				server.logout(clientNum);
 				stop();
 			}
 			send("/join");
@@ -170,13 +174,13 @@ public class ChatServerThread extends Thread
 			catch(IOException ioe)
 			{  
 				System.out.println(clientNum + " ERROR reading: " + ioe.getMessage());
-				server.remove(clientNum);
-				server.logout(clientNum);
+				error = 1;
 				if (room != null){
-					if(room.quit(this))
-						server.removeRoom(room.getRoomID());
+					int flag = room.quit(this);
+					if (flag != -1)
+						server.removeRoom(flag);
 				}
-				stop();
+				server.remove(clientNum);
 			}
 			send("/exit");
 		}
