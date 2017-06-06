@@ -43,7 +43,7 @@ public class ChatClient implements Runnable
 				String command = msg.split(" ")[0];
 				if (command.equals("/help")){
 					System.out.println("-------------- List of Commands --------------");
-					System.out.println("/status : Show where you are");
+					System.out.println("/stat : Show where you are");
 					System.out.println("/quit : Exit the chat program\r\n");
 					System.out.println("In Login Screen");
 					System.out.println("/register <ID> <PW> : Sign up");
@@ -57,18 +57,19 @@ public class ChatClient implements Runnable
 					System.out.println("In Chat Room");
 					System.out.println("/list : Show user list");
 					System.out.println("/file : Show file list");
-					System.out.println("/upload <File_name> : Upload a file");
-					System.out.println("/download <File_ID> : Download a file");
+					System.out.println("/up <File_name> : Upload a file");
+					System.out.println("/down <File_ID> : Download a file");
 					System.out.println("/exit : Leave the room");
+					System.out.println("/w <User_ID> <Msg>: Whisper to a user");
 					System.out.println("----------------------------------------------");
 					continue;
 				}
-				else if(status == Status.ROOM && command.equals("/upload")){
+				else if(status == Status.ROOM && command.equals("/up")){
 					if (msg.length() < 9){
 						System.out.println("Type File name.");
 						continue;
 					}
-					File file = new File(msg.substring(8));
+					File file = new File(msg.substring(4));
 					if (!file.exists()) {
 						System.out.println("File does not exists.");
 						continue;
@@ -78,7 +79,7 @@ public class ChatClient implements Runnable
 						continue;
 					}
 					System.out.println("File transfer started. Please wait...");
-					streamOut.writeUTF("/upload " + file.getName());
+					streamOut.writeUTF("/up " + file.getName());
 					streamOut.flush();
 					
 					fstreamIn = new FileInputStream(file);
@@ -123,7 +124,7 @@ public class ChatClient implements Runnable
 		else if (command.equals("/exit")) {
 			status = Status.MAIN;
 		}
-		else if (command.equals("/download")){
+		else if (command.equals("/down")){
 			if (s.length < 2){
 				System.out.println("Error: File name isn't received");
 				return;
