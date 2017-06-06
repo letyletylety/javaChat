@@ -2,7 +2,7 @@
 
 **-------------- List of Commands --------------**
 
-/status : Show where you are  
+/stat : Show where you are  
 /quit : Exit the chat program
   
 **In Login Screen**
@@ -24,6 +24,7 @@
 /file : Show file list  
 /upload \<File_name> : Upload a file  
 /download \<File_ID> : Download a file  
-/exit : Leave the room
+/exit : Leave the room  
+/w \<User_ID> \<Msg> : Whisper to user
 
 **----------------------------------------------**
