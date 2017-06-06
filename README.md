@@ -22,8 +22,8 @@
 
 /list : Show user list  
 /file : Show file list  
-/upload \<File_name> : Upload a file  
-/download \<File_ID> : Download a file  
+/up \<File_name> : Upload a file  
+/down \<File_ID> : Download a file  
 /exit : Leave the room  
 /w \<User_ID> \<Msg> : Whisper to user
 
