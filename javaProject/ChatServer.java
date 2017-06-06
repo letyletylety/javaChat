@@ -159,7 +159,7 @@ public class ChatServer implements Runnable
 	
 	public boolean handle_login(int clientNum, String input) {
 		String s[] = input.split(" ");
-		if (s[0].equals("/status")){
+		if (s[0].equals("/stat")){
 			clients[clientNum].send("Current Location : Login Page");
 			return false;
 		}
@@ -205,7 +205,7 @@ public class ChatServer implements Runnable
 	public boolean handle_main(ChatServerThread client, String msg){
 		String s[] = msg.split(" ");
 		int roomID;
-		if (s[0].equals("/status")){
+		if (s[0].equals("/stat")){
 			client.send("Current Location : Main Menu");
 			client.send("Your ID : " + client.getUsername());
 			return false;
@@ -291,21 +291,23 @@ public class ChatServer implements Runnable
 	{  
 		String s[] = input.split(" ");
 		String command = s[0];
-		if (command.equals("/status")){
+		if (command.equals("/stat")){
 			client.send("Current Location : Chat Room");
 			client.send("Your ID : " + client.getUsername());
 			client.send("Current Room : " + client.getRoom().getRoomName());
 		}
 		else if (command.equals("/exit"))
 		{
-			if(room.quit(client))
-				removeRoom(room.getRoomID());
+			int flag = room.quit(client);
+			if (flag != -1)
+				removeRoom(flag);
 			return false;
 		}
 		else if (command.equals("/quit")){
 			client.send("/quit");
-			if(room.quit(client))
-				removeRoom(room.getRoomID());
+			int flag = room.quit(client);
+			if (flag != -1)
+				removeRoom(flag);
 			remove(client.getclientNum());
 			return false;
 		}
@@ -315,14 +317,14 @@ public class ChatServer implements Runnable
 		else if (command.equals("/file")){
 			room.fileList(client);
 		}
-		else if (command.equals("/upload")){
+		else if (command.equals("/up")){
 			if (s.length < 2){
 				client.send("Error: Invalid file name");
 				return true;
 			}
 			client.upload(s[1]);
 		}
-		else if (command.equals("/download")){
+		else if (command.equals("/down")){
 			if (s.length < 2) {
 				client.send("Type file ID");
 				return true;
@@ -334,6 +336,16 @@ public class ChatServer implements Runnable
 			}
 			client.sendFile(room.getFile(fileID), room.getFileName(fileID));
 		}
+		else if (command.equals("/w")) {
+			if (s.length < 2) 
+				client.send("Type oppenent ID");
+			else if (input.length() <= command.length() + s[1].length() + 2)
+				client.send("Type message");
+			else
+				room.whisper(client, s[1], input.substring(command.length() + s[1].length() + 2));
+		}
+		else if (command.charAt(0) == '/')
+			client.send("Unknow command");
 		else
 			room.chat(client.getUsername(), input);
 		return true;
@@ -354,6 +366,8 @@ public class ChatServer implements Runnable
 		if (clientNum >= 0)
 		{
 			ChatServerThread toTerminate = clients[clientNum];
+			if (clients[clientNum] == null)
+				return;
 			logout(clientNum);
 			clients[clientNum] = null;
 			System.out.println("Removing client thread " + clientNum );
