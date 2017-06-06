@@ -1,5 +1,9 @@
 # javaChat
 
+`$ java ChatServer <Port>`  
+`$ java ChatClient <IP> <Port>`
+
+
 **-------------- List of Commands --------------**
 
 /stat : Show where you are  
