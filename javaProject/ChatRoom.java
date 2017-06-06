@@ -81,36 +81,38 @@ public class ChatRoom {
 		}
 		client.send("Room number " + roomID + " is full");
 		return false;
-	}
+	 }
 	
-	public synchronized boolean quit(ChatServerThread client){
+	public synchronized int quit(ChatServerThread client){
 		if (clientCount > 0){
+			client.setRoom(null);
 			for (int i = 0; i < clientCount; ++i){
 				if (clients[i].getclientNum() == client.getclientNum()){
 					for (int j = 0; j < clientCount; ++j) {
-						clients[j].send(client.getUsername() + " left");
+						if (clients[j].error != 1)
+							clients[j].send(client.getUsername() + " left");
 						FileHandler log = new FileHandler("log\\" + clients[j].getUsername() + "\\" + roomName);
 						log.Write(client.getUsername() + " left");
 					}
 					clients[i] = null;
 					clientCount--;
-					client.setRoom(null);
-					if (clientCount == 0){
+
+					if (clientCount == 0 && repository != null){
 						File userfiles[] = repository.listFiles();
 						for (int j = 0; j < userfiles.length; ++j){
 							userfiles[j].delete();
 						}
 						repository.delete();
-						return true;
+						return roomID;
 					}
 					if (clients[clientCount] != null)
 						clients[i] = clients[clientCount];
-					return false;
+					return -1;
 				}
 			}
 		}
 		System.out.println("Error: Unable to quit room - " + client.getUsername());
-		return false;
+		return -1;
 	}
 	
 	public synchronized void chat(String name, String msg){
@@ -118,6 +120,26 @@ public class ChatRoom {
 			FileHandler log = new FileHandler("log\\" + clients[i].getUsername() + "\\" + roomName);
 			log.Write(name + ": " + msg);
 			clients[i].send(name + ": " + msg);
+		}
+	}
+	
+	public synchronized void whisper(ChatServerThread from, String to, String msg){
+		ChatServerThread opponent = null;
+		for (int i = 0; i < clientCount; ++i) {
+			if (clients[i].getUsername().equals(to)) {
+				opponent = clients[i];
+				break;
+			}
+		}
+		if (opponent == null)
+			from.send(to + " is not in the room");
+		else {
+			FileHandler log = new FileHandler("log\\" + from.getUsername() + "\\" + roomName);
+			log.Write(from.getUsername() + "(whisper) : " + msg);
+			from.send(from.getUsername() + "(whisper) : " + msg);
+			log = new FileHandler("log\\" + to + "\\" + roomName);
+			log.Write(from.getUsername() + "(whisper) : " + msg);
+			opponent.send(from.getUsername() + "(whisper) : " + msg);
 		}
 	}
 	
@@ -131,6 +153,7 @@ public class ChatRoom {
 	
 	public void fileList(ChatServerThread client) {
 		String msg = "-------------- File List --------------\r\n";
+		msg.concat("File ID\tFile Name\r\n");
 		for (int i = 1; i < fileCount; ++i){
 			msg = msg.concat("" + i + "\t" + fileName[i] + "\r\n");
 		}
