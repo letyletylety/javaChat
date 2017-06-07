@@ -153,7 +153,7 @@ public class ChatRoom {
 	
 	public void fileList(ChatServerThread client) {
 		String msg = "-------------- File List --------------\r\n";
-		msg.concat("File ID\tFile Name\r\n");
+		msg = msg.concat("File ID\tFile Name\r\n");
 		for (int i = 1; i < fileCount; ++i){
 			msg = msg.concat("" + i + "\t" + fileName[i] + "\r\n");
 		}
