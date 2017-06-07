@@ -135,7 +135,6 @@ public class ChatServerThread extends Thread
 
 	public void run()
 	{  
-		// 로그인
 		System.out.println("Thread Number " + clientNum + " running.");
 		try {
 			send("Enter ID, PW");
