@@ -9,11 +9,12 @@ public class ChatRoom {
 	private Integer fileTicket = 0;
 	private Integer fileCount = 1;
 	private String[] fileName = new String[500];
+	private UIManager ui = new UIManager();
 	
 	public ChatRoom(String name, int _roomID){
 		roomName = name;
 		roomID = _roomID;
-		repository = new File("repository\\" + _roomID);
+		repository = new File("repository/" + _roomID);
 		if (!repository.exists())
 			repository.mkdirs();
 	}
@@ -44,7 +45,7 @@ public class ChatRoom {
 	}
 	
 	public File getFile(int fileID) {
-		File file = new File("repository\\" + roomID + "\\" + fileID);
+		File file = new File("repository/" + roomID + "/" + fileID);
 		if (!file.exists())
 			return null;
 		return file;
@@ -73,7 +74,7 @@ public class ChatRoom {
 			clientCount++;
 			for (int i = 0; i < clientCount; ++i){
 				clients[i].send(client.getUsername() + " joined");
-				FileHandler log = new FileHandler("log\\" + clients[i].getUsername() + "\\" + roomName);
+				FileHandler log = new FileHandler("log/" + clients[i].getUsername() + "/" + roomName);
 				log.Write(client.getUsername() + " joined");
 			}
 			client.setRoom(this);
@@ -81,65 +82,56 @@ public class ChatRoom {
 		}
 		client.send("Room number " + roomID + " is full");
 		return false;
-	 }
+	}
 	
-	public synchronized int quit(ChatServerThread client){
+	public synchronized boolean quit(ChatServerThread client){
 		if (clientCount > 0){
-			client.setRoom(null);
 			for (int i = 0; i < clientCount; ++i){
 				if (clients[i].getclientNum() == client.getclientNum()){
 					for (int j = 0; j < clientCount; ++j) {
-						if (clients[j].error != 1)
-							clients[j].send(client.getUsername() + " left");
-						FileHandler log = new FileHandler("log\\" + clients[j].getUsername() + "\\" + roomName);
+						clients[j].send(client.getUsername() + " left");
+						FileHandler log = new FileHandler("log/" + clients[j].getUsername() + "/" + roomName);
 						log.Write(client.getUsername() + " left");
 					}
 					clients[i] = null;
 					clientCount--;
-
-					if (clientCount == 0 && repository != null){
+					client.setRoom(null);
+					if (clientCount == 0){
 						File userfiles[] = repository.listFiles();
 						for (int j = 0; j < userfiles.length; ++j){
 							userfiles[j].delete();
 						}
 						repository.delete();
-						return roomID;
+						return true;
 					}
 					if (clients[clientCount] != null)
 						clients[i] = clients[clientCount];
-					return -1;
+					return false;
 				}
 			}
 		}
 		System.out.println("Error: Unable to quit room - " + client.getUsername());
-		return -1;
+		return false;
 	}
 	
 	public synchronized void chat(String name, String msg){
-		for (int i = 0; i < clientCount; ++i){
-			FileHandler log = new FileHandler("log\\" + clients[i].getUsername() + "\\" + roomName);
-			log.Write(name + ": " + msg);
-			clients[i].send(name + ": " + msg);
-		}
-	}
-	
-	public synchronized void whisper(ChatServerThread from, String to, String msg){
-		ChatServerThread opponent = null;
-		for (int i = 0; i < clientCount; ++i) {
-			if (clients[i].getUsername().equals(to)) {
-				opponent = clients[i];
+
+		int whosaid = -1;
+		
+		for(int i = 0 ; i < clientCount; ++i)
+		{
+			if(clients[i].getUsername() == name)
+			{
+				whosaid = i;
 				break;
 			}
 		}
-		if (opponent == null)
-			from.send(to + " is not in the room");
-		else {
-			FileHandler log = new FileHandler("log\\" + from.getUsername() + "\\" + roomName);
-			log.Write(from.getUsername() + "(whisper) : " + msg);
-			from.send(from.getUsername() + "(whisper) : " + msg);
-			log = new FileHandler("log\\" + to + "\\" + roomName);
-			log.Write(from.getUsername() + "(whisper) : " + msg);
-			opponent.send(from.getUsername() + "(whisper) : " + msg);
+		
+		for (int i = 0; i < clientCount; ++i){
+			FileHandler log = new FileHandler("log/" + clients[i].getUsername() + "/" + roomName);	
+			log.Write(name + ": " + msg);
+
+			clients[i].send( ui.setColor(whosaid, name + ": " + msg) );
 		}
 	}
 	
@@ -153,12 +145,11 @@ public class ChatRoom {
 	
 	public void fileList(ChatServerThread client) {
 		String msg = "-------------- File List --------------\r\n";
-		msg = msg.concat("File ID\tFile Name\r\n");
+		msg = msg.concat("File ID\tFile Name\r\n");	
 		for (int i = 1; i < fileCount; ++i){
 			msg = msg.concat("" + i + "\t" + fileName[i] + "\r\n");
 		}
 		msg = msg.concat("---------------------------------------");
 		client.send(msg);
-	}
-	
+	}	
 }
