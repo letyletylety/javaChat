@@ -159,6 +159,8 @@ public class ChatServer implements Runnable
 	
 	public boolean handle_login(int clientNum, String input) {
 		String s[] = input.split(" ");
+		if (s.length == 0) 
+			return false;
 		if (s[0].equals("/stat")){
 			clients[clientNum].send("Current Location : Login Page");
 			return false;
@@ -203,6 +205,10 @@ public class ChatServer implements Runnable
 	
 	public boolean handle_main(ChatServerThread client, String msg){
 		String s[] = msg.split(" ");
+		if (s.length == 0) {
+			client.send("Unknown command");
+			return false;
+		}
 		int roomID;
 		if (s[0].equals("/stat")){
 			client.send("Current Location : Main Menu");
@@ -289,12 +295,12 @@ public class ChatServer implements Runnable
 	public synchronized boolean handle_room(ChatRoom room, ChatServerThread client, String input)
 	{  
 		String s[] = input.split(" ");
-		String command = s[0];
-		
-		if(command.length() == 0)
-		{
+		if (s.length == 0) {
+			room.chat(client.getUsername(), input);
 			return true;
 		}
+		String command = s[0];
+		
 		if (command.equals("/stat")){
 			client.send("Current Location : Chat Room");
 			client.send("Your ID : " + client.getUsername());
@@ -348,7 +354,7 @@ public class ChatServer implements Runnable
 			else
 				room.whisper(client, s[1], input.substring(command.length() + s[1].length() + 2));
 		}
-		else if (command.charAt(0) == '/')
+		else if (command.length() > 0 && command.charAt(0) == '/')
 			client.send("Unknow command");
 		else
 			room.chat(client.getUsername(), input);
