@@ -44,6 +44,11 @@ public class ChatClient implements Runnable
 			try
 			{  
 				String msg = console.readLine();
+				if (msg.split(" ").length == 0) {
+					streamOut.writeUTF(msg);
+					streamOut.flush();
+					continue;
+				}
 				String command = msg.split(" ")[0];
 				if (command.equals("/help")){
 					ui.CleanUp();
