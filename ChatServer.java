@@ -362,13 +362,22 @@ public class ChatServer implements Runnable
 	}
 	
 	private int ticket_r(){
-		for (int i = 0; i < roomCount; ++i) {
-			if (rooms[i].getRoomID() != roomTicket){
-				return roomTicket;
+		if (roomCount == 0)
+			return roomTicket;
+		while (true){
+			boolean flag = true;
+			for (int i = 0; i < roomCount; ++i) {
+				if (rooms[i].getRoomID() == roomTicket) {
+					flag = false;
+					break;
+				}
 			}
-			roomTicket = (roomTicket + 1) % 9999 + 1;
+			if (flag)
+				return roomTicket;
+			roomTicket = (roomTicket + 1) % 9999;
+			if (roomTicket == 0)
+				roomTicket++;
 		}
-		return roomTicket;
 	}
 
 	public synchronized void remove(int clientNum)
